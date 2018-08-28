@@ -1,0 +1,27 @@
+{
+  "name": "node-js-mysql",
+  "version": "1.0.0",
+  "description": "Project generating and incorporating a MySQL database",
+  "main": "bamazonCustomer.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DaleP1988/Node-JS-MySQL.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DaleP1988/Node-JS-MySQL/issues"
+  },
+  "homepage": "https://github.com/DaleP1988/Node-JS-MySQL#readme",
+  "dependencies": {
+    "console.table": "^0.10.0",
+    "inquirer": "^6.2.0",
+    "mysql": "^2.16.0",
+    "nodemon": "^1.18.3"
+  },
+  "devDependencies": {},
+  "keywords": []
+}
