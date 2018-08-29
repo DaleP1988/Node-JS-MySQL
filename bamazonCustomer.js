@@ -31,8 +31,7 @@ function displayItems() {
     console.log("--------------------------------------------\n"); //NEED TO CLEAN THIS UP...
     // console.log("Item:" + res.product_name + "Department:" + res.department_name + "Price:" + res.price + "Quantity Available" + res.department_name);
     pointOfSale();
-    // connection.end();
-  
+    // connection.end(); 
     });
 }
 
@@ -43,20 +42,20 @@ function pointOfSale() {
   // query the database for all items being auctioned
   connection.query("SELECT * FROM products", function(err, results) {
     if (err) throw err;
-    console.log(results);
+    // console.log(results);
     // once you have the items, prompt the user for which they'd like to bid on
     inquirer
       .prompt([
         {
-          name: "choice",
+          name: "product",
           type: "rawlist",
           choices: function() {
             var choiceArray = [];
             for (var i = 0; i < results.length; i++) {    //FIND AND CHANGE ITEM_NAME BELOW!!!!!!
-              choiceArray.push(results[i].item_name);
+              choiceArray.push(results[i].product_name);
             }
+            // console.log(choiceArray);
             return choiceArray;
-            console.log(choiceArray);
           },
           message: "What item would you like to buy?"   //prompt what item?
         },
@@ -66,14 +65,24 @@ function pointOfSale() {
           message: "How many would you like to buy?"  //prompt how many?
         }
       ])
-      .then(function(answer) {
+      .then(function(answer) {                       //this will have a product and quantity field
         // get the information of the chosen item
         var chosenItem;
+        // console.log(results.length);
         for (var i = 0; i < results.length; i++) {
-          if (results[i].item_name === answer.choice) {
+          
+          // console.log(results[i]);
+          // console.log(answer);
+          if (results[i].product_name === answer.product) {
             chosenItem = results[i];
+  
           }
         }
+         if (!chosenItem){
+          console.log("Please select a valid product number");
+          pointOfSale();
+          return;                           // return has to go after the function is called, otherwise the function wont be called   
+         }
         // determine if there is enough in stock
         if (chosenItem.stock_quantity > parseInt(answer.quantity)) {  //check stock
           // if enough in stock, 
@@ -88,21 +97,36 @@ function pointOfSale() {
               }
             ],
             function(error) {
-              if (error) throw err;
+              if (error) throw error;
               console.log("Looks like we have enough to fill your order! \n");
               console.log("One moment please....")
               console.log("---------------------------------------------\n");
               // start();   //this was the start over function
-            },
-            function(purchaseTotal){
-             purchaseTotal = chosenItem.price * answer.quantity;
-             console.log("Your total is:" + purchaseTotal);
+              purchaseTotal = chosenItem.price * answer.quantity;
+              console.log("Your Purchase Total is: $" + purchaseTotal.toFixed(2));
+              inquirer
+              .prompt([
+              {
+                name: "continue",
+                type: "confirm",
+                message: "Would you like to buy another product?" //prompt how many?
+              }
+              ])
+              .then(function(answer){
+                if (answer.continue) {
+                  console.log("Okay! Happy Shopping!");
+                  pointOfSale();  
+                }else{
+                  console.log("Please Come Again Soon!");
+                }     
 
-            }
+              })             
+            },
           );
         }
         else {
-          // don't have enough, start over at askWhatItem...
+          // don't have enough, start over at pointOfSale...
+          console.log("INSUFFICIENT QUANTITY")
           console.log("Sorry, we don't have enough of that item to fill your order.");
           console.log("Please select another item.");
           pointOfSale();
