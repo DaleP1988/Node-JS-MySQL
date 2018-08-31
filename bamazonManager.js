@@ -1,5 +1,3 @@
-
-
 var mysql = require("mysql");
 var inquirer = require("inquirer");
 var connection = mysql.createConnection({
@@ -27,13 +25,14 @@ function managerOptions() {
         "View Products in Stock",
         "View Low Inventory",
         "Add to Inventory",
-        "Add New Product"
+        "Add New Product",
+        "Quit Inventory Management"
         
       ]
     })
     .then(function(answer) {
       switch (answer.action) {
-      case "View Products for Sale":
+      case "View Products in Stock":
         viewProducts();
         break;
       case "View Low Inventory":
@@ -45,6 +44,11 @@ function managerOptions() {
       case "Add New Product":
         addNewProduct();
         break;
+      case  "Quit Inventory Management":
+        console.log("Time for Coffee! See ya later!"); 
+        process.exit(0);      
+        break;
+      
       }
     });
 }
@@ -54,7 +58,7 @@ function managerOptions() {
 
 function viewProducts() {
   connection.query("SELECT * FROM products", function(err, res){
-    console.log(res);
+    // console.log(res);
     if (err) throw err;
     console.log("BAMAZON Management BOH");  //console log items in more attractive format
     console.log("--------------------------------------------\n");
@@ -95,70 +99,85 @@ function checkInventory() {
     });
 }
 
-//function to add a more of a specific item to the stock
-//function not running
-
-// function addInventory() {
-//   // query the database for all items being auctioned
-//   connection.query("SELECT * FROM products", function(err, results) {
-//     if (err) throw err;
-//     // once you have the items, prompt the user for which they'd like to bid on
-//     inquirer
-//       .prompt([
-//         {
-//           name: "choice",
-//           type: "rawlist",
-//           choices: function() {
-//             var choiceArray = [];
-//             for (var i = 0; i < results.length; i++) {
-//               choiceArray.push(results[i].product_name);
-//             }
-//             return choiceArray;
-//           },
-//           message: "What item would you like to restock?"
-//         },
-//         {
-//           name: "product",
-//           type: "input",
-//           message: "How many units would you like to add?"
-//         }
-//       ])
-//       .then(function(answer) {
-//         // get the information of the chosen item
-//         var chosenItem;
-//         for (var i = 0; i < results.length; i++) {
-//           if (results[i].product_name === answer.choice) {
-//             chosenItem = results[i];
-//             connection.query(
-//               "UPDATE auctions SET ? WHERE ?",
-//               [{
-//                 stock_quantity: answer.product,
-//               },
-//               {
-//                 id: chosenItem.id
-//               }
-
-//               ],
-//               function(error) {
-//                 if (error) throw err;
-//                 console.log(answer.product + "updated successfully!");
-//                 // managerOptions();
-//               }
-//             };
-//           }      
-//     });
-//   }
+// function to add a more of a specific item to the stock
 
 
-
-
-
-
+function addInventory() {
+  // query the database for all products in the inventory
+  connection.query("SELECT * FROM products", function(err, results) {
+    // console.log(results);
+    if (err) throw err;
+  //prompt user for item to restock
+    inquirer
+      .prompt([
+        {
+          name: "choice",
+          type: "rawlist",
+          pageSize: 20,
+          choices: function() {
+            var choiceArray = [];
+            for (var i = 0; i < results.length; i++) {
+              choiceArray.push(results[i].product_name);
+            }
+            return choiceArray;
+          },
+          message: "What item would you like to restock?"
+        },
+        {
+          name: "quantity",
+          type: "input",
+          message: "How many units would you like to add?"
+        }
+      ])
+      .then(function(answer) {
+        // get the information of the chosen item
+        var chosenItem;
+        var quantity =  parseInt(answer.quantity);
+        for (var i = 0; i < results.length; i++) {
+          if (results[i].product_name === answer.choice) {
+            // console.log(answer.choice);
+            // console.log(answer.product);
+            // console.log(results[i]);
+            chosenItem = results[i];
+            connection.query(
+              "UPDATE products SET ? WHERE ?",
+              [{
+                stock_quantity: chosenItem.stock_quantity + quantity,
+              },
+              {
+                item_id: chosenItem.item_id
+              }
+              ], function(error) {
+                if (error) throw error;
+                console.log("Congratulations! \n You have updated '" + answer.choice + "' successfully");
+                console.log("  You have added " + answer.quantity + " units to BOH");
+                console.log("-----------------------------------------------");
+                chosenItem.stock_quantity = chosenItem.stock_quantity + quantity;
+                printUpdatedProduct(chosenItem);
+                managerOptions();
+               
+              }
+            );
+          }
+        };
+      });
+    });
+  }   //semi colons only on lines of code that actually run.
+   function printUpdatedProduct(product){
+      console.log("Updated BAMAZON Product Catalog (for BOH)");
+      console.log(product.product_name);
+      console.log(product.department_name);
+      console.log("$" + product.price.toFixed(2));
+      console.log(product.stock_quantity + "  units");
+      console.log("----------------------------------------------");  
+   }
+           
+       
 
 //function to add a new product to the store
-//function not running
 
-function addProduct() {
+
+function addNewProduct() {
   inquirer
     .prompt([
       {
@@ -176,6 +195,7 @@ function addProduct() {
         type: "input",
         message: "How many units would you like to stock?",
         validate: function(value) {
+          // console.log(value);
           if (isNaN(value) === false) {
             return true;
           }
@@ -187,6 +207,7 @@ function addProduct() {
           type: "input",
           message: "What is the price per unit of the new product?",
           validate: function(value) {
+            // console.log(value);
             if (isNaN(value) === false) {
               return true;
             }
@@ -208,13 +229,27 @@ function addProduct() {
           if (err) throw err;
           console.log("New product has been added successfully!");
           // re-prompt the user for if they want to bid or post
-          managerOptions();
-        }
-      );
+          managerOptions();  
+        });    
     });
+  }
 
      
+//PSEUDOCODE FINAL LEVEL
+// NEW TABLE: departments with department_id, department_name, over_head_costs,
 
+//modify bamazonCustomer.js and products table
+//add product_sales column
+//in js, multiply quantity purchased by product_sales column (upon customer purchase)
+//update the products column
+
+//New Node app: bamazonSuperviser.js
+//give menu options: view product sales by department, create new department
+//commands: view product sales by department
+//total_profit = difference b/w over_head_costs and product_sales; total_profit not stored (use alias)
+
+//hints:
+//check aliases in MySQL, look into GROUP BYs, look into JOINS
 
 
 
